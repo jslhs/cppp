@@ -90,6 +90,8 @@ namespace utility
 		{
 
 		}
+
+		delete[] buf;
 	}
 
 	int disk::number() const
