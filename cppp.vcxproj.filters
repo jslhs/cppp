@@ -18,12 +18,18 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="disk.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TaggedTuple.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mutex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="disk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

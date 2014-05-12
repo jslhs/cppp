@@ -78,9 +78,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="disk.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="disk.h" />
     <ClInclude Include="Mutex.hpp" />
     <ClInclude Include="TaggedTuple.hpp" />
   </ItemGroup>

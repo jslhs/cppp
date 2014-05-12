@@ -6,6 +6,7 @@
 #include <atomic>
 #include "TaggedTuple.hpp"
 #include "Mutex.hpp"
+#include "disk.h"
 
 struct name {};
 struct age {};
@@ -54,6 +55,11 @@ int main(void)
 	auto r = CAS(&a, a, b);
 
 	auto x = [](int x){ return ++x; }(0);
+
+	using namespace utility;
+	std::cout << get_win32_error_string() << std::endl;
+
+	std::cin.ignore(1);
 
 	return 0;
 }
