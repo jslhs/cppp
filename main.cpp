@@ -58,6 +58,7 @@ int main(void)
 
 	using namespace utility;
 	std::cout << get_win32_error_string() << std::endl;
+	auto disks = get_disk_volume_map();
 
 	std::cin.ignore(1);
 

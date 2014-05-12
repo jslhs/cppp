@@ -23,6 +23,19 @@ namespace utility
 
 	namespace detail
 	{
+		class handle_wrapper
+		{
+		public:
+			handle_wrapper(HANDLE handle, std::string &err);
+			~handle_wrapper();
+
+			operator HANDLE() const;
+
+		private:
+			std::string &_err;
+			HANDLE _handle;
+		};
+
 		struct ata_command
 		{
 			uint32_t feature;
@@ -64,10 +77,7 @@ namespace utility
 	{
 	public:
 		explicit disk(int num);
-		disk(disk &&);
 		~disk();
-
-		disk &operator=(disk &&);
 
 	public: // properties
 		bool exists() const;
@@ -82,15 +92,13 @@ namespace utility
 		bool format();
 
 	private:
-		disk(const disk &);
-		disk &operator=(const disk &);
-
 		detail::ata_status exec_ata_cmd(const detail::ata_command &cmd, uint32_t transfer_length, void *buf, detail::ata_flags flags);
-		bool identify();
+		void identify();
 
 	private:
 		int _num;
 		bool _exists;
+		disk_size_t _size;
 		std::string _err;
 		std::string _filename;
 		std::string _vendor;
@@ -102,7 +110,7 @@ namespace utility
 	bool operator!=(const disk &disk1, const disk &disk2);
 	bool operator<(const disk &disk1, const disk &disk2);
 
-	using diskset = std::vector<disk>;
+	using disk_set = std::vector<disk>;
 
 	// logical drive
 	class volume
@@ -110,24 +118,25 @@ namespace utility
 	public:
 		explicit volume(char drive_letter);
 		explicit volume(const std::string &name);
-		volume(volume &&);
+//		volume(volume &&);
 		~volume();
 
-		volume &operator=(volume &&);
+//		volume &operator=(volume &&);
 
 		disk_size_t size() const;
 		disk_size_t freespace() const;
 		const std::string &label() const;
 
-		diskset extents() const;
+		const disk_set &extents() const;
 
 	private:
-		volume(const volume &);
-		volume &operator=(const volume &);
+		//volume(const volume &);
+		//volume &operator=(const volume &);
 
 	private:
 		std::string _filename;
 		std::string _label;
+		disk_set _extents;
 	};
 
 	using volume_set = std::vector<volume>;
@@ -135,7 +144,8 @@ namespace utility
 
 	enum constants
 	{
-		kwin32_max_phy_disks = 16
+		kwin32_max_phy_disks = 16,
+		kwin32_max_parts = 128,
 	};
 
 	disk_volume_map get_disk_volume_map(int max_disks = kwin32_max_phy_disks);
