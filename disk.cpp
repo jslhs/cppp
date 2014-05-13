@@ -106,8 +106,12 @@ namespace utility
 					sp.DataIn = SCSI_IOCTL_DATA_UNSPECIFIED;
 				}
 
+				int len = 0x2; // transfer length in SECTOR_COUNT field
+				int blk = 0x1; // length in blocks
+				int chk_cond = 1; // generate CHECK_CONDITION ERROR on success
+
 				sp.Cdb[1] = proto << 1;
-				sp.Cdb[2] = (0x1 << 5) | (dir << 3) | (0x1 << 2) | 0x02; // transfer length in SECTOR_COUNT field
+				sp.Cdb[2] = (chk_cond << 5) | (dir << 3) | (blk << 2) | len;
 				sp.Cdb[3] = cmd.feature & 0xff;
 				sp.Cdb[4] = cmd.count & 0xff;
 				sp.Cdb[5] = cmd.lba & 0xff;
@@ -127,14 +131,18 @@ namespace utility
 				err = GetLastError();
 				if (err || sp.ScsiStatus)
 				{
-					if (sense[1] != 0x1)
+					if (sense[1] != 0x1) // not RECOVERED ERROR
 					{
 						status = 1;
 					}
 					else
 					{
-						status = sense[21];
-						err = 0;
+						status = 1;
+						if (sense[8] = 0x09) // ATA Status Return Descriptor
+						{
+							status = sense[21]; // Status Register
+							err = 0;
+						}
 					}
 				}
 			}
@@ -295,6 +303,8 @@ namespace utility
 		_phy_bytes_per_sector = _log_bytes_per_sector << (data[106] & 0xf);
 
 		disk_size_t max_lba = *reinterpret_cast<disk_size_t *>(&data[100]);
+
+		CloseHandle(h);
 	}
 
 	int disk::number() const
@@ -329,17 +339,61 @@ namespace utility
 	{
 		_filename += drive_letter;
 		_filename += ':';
+		init();
 	}
 
 	volume::volume(const std::string &name)
 		: _filename(name)
 	{
 		if (_filename.back() == '\\') _filename.pop_back();
+		init();
 	}
 
 	volume::~volume()
 	{
 
+	}
+
+	void volume::init()
+	{
+		using namespace detail;
+		auto h = CreateFileA(_filename.c_str()
+			, GENERIC_READ
+			, FILE_SHARE_READ | FILE_SHARE_WRITE
+			, nullptr
+			, OPEN_EXISTING
+			, 0
+			, nullptr);
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			_err = get_win32_error_string();
+			return;
+		}
+
+		DWORD bytes_returned;
+		BOOL rv;
+		auto bufsize = sizeof(VOLUME_DISK_EXTENTS) + kwin32_max_phy_disks * sizeof(DISK_EXTENT);
+		std::unique_ptr<char[]> buf(new char[bufsize]);
+		VOLUME_DISK_EXTENTS *ext = reinterpret_cast<VOLUME_DISK_EXTENTS *>(buf.get());
+
+		rv = DeviceIoControl(handle_wrapper(h, _err)
+			, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS
+			, nullptr
+			, 0
+			, buf.get()
+			, bufsize
+			, &bytes_returned
+			, nullptr);
+		if (rv)
+		{
+			for (DWORD i = 0; i < ext->NumberOfDiskExtents; i++)
+			{
+				_extents.push_back(disk(ext->Extents[i].DiskNumber));
+			}
+		}
+
+		char path[MAX_PATH];
+		GetVolumePathNameA(_filename.c_str(), path, sizeof(path));
 	}
 
 	const disk_set &volume::extents() const

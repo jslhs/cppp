@@ -151,10 +151,7 @@ namespace utility
 	public:
 		explicit volume(char drive_letter);
 		explicit volume(const std::string &name);
-//		volume(volume &&);
 		~volume();
-
-//		volume &operator=(volume &&);
 
 		disk_size_t size() const;
 		disk_size_t freespace() const;
@@ -163,13 +160,14 @@ namespace utility
 		const disk_set &extents() const;
 
 	private:
-		//volume(const volume &);
-		//volume &operator=(const volume &);
+		void init();
 
 	private:
 		std::string _filename;
 		std::string _label;
+		std::string _err;
 		disk_set _extents;
+		
 	};
 
 	using volume_set = std::vector<volume>;
