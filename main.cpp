@@ -1,64 +1,40 @@
 #include <iostream>
-#include <vector>
-#include <string>
-#include <map>
-#include <mutex>
-#include <atomic>
-#include "TaggedTuple.hpp"
-#include "Mutex.hpp"
 #include "disk.h"
-
-struct name {};
-struct age {};
-struct email {};
-
-tagged_tuple<name, std::string, age, int, email, std::string> get_record() 
-{
-	return{ "Bob", 32, "bob@bob.bob" };
-}
-
-template<class T>
-bool CAS(T *addr, T exp, T val)
-{
-	if (*addr == exp)
-	{
-		*addr = val;
-		return true;
-	}
-	return false;
-}
 
 int main(void)
 {
-	std::map<std::string, int> tokens{
-		{ "name0", 20 },
-		{ "name1", 21 },
-		{ "name2", 23 }
-	};
-
-	std::cout << "Age: " << get_record().get<age>() << std::endl;
-
-	hierarchical_mutex mutex(32);
-	hierarchical_mutex mutex1(100);
-	//std::lock(mutex, mutex1);
-	//std::lock_guard<hierarchical_mutex> lk(mutex);
-	//std::lock_guard<hierarchical_mutex> lk1(mutex1);
-
-	std::atomic_int ai;
-	ai.store(200);
-	std::atomic_pointer ss;
-	//ai.compare_exchange_weak(2,1);
-
-	int *a = new int{ 32 };
-	int *b = new int{ 234 };
-
-	auto r = CAS(&a, a, b);
-
-	auto x = [](int x){ return ++x; }(0);
-
 	using namespace utility;
-	std::cout << get_win32_error_string() << std::endl;
 	auto disks = get_disk_volume_map();
+
+	for (auto &p : disks)
+	{
+		auto &disk = p.first;
+		auto &volumes = p.second;
+
+		std::cout << "Disk " 
+			<< disk.number() 
+			<< ", " 
+			<< disk.model() 
+			<< ", " 
+			<< (disk.size() >> 30) 
+			<< "GB" 
+			<< std::endl;
+		std::cout << "Logical Drives: " << std::endl;
+		for (auto &volume : volumes)
+		{
+			std::cout << "    "
+				<< volume.root_path()
+				<< ", "
+				<< volume.label()
+				<< ", "
+				<< volume.fs_name()
+				<< ", "
+				<< (volume.size() >> 30)
+				<< "GB"
+				<< std::endl;
+		}
+		std::cout << std::endl;
+	}
 
 	std::cin.ignore(1);
 

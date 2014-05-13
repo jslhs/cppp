@@ -119,6 +119,8 @@ namespace utility
 				sp.Cdb[7] = (cmd.lba >> 16) & 0xff;
 				sp.Cdb[8] = cmd.device & 0xff;
 				sp.Cdb[9] = cmd.cmd & 0xff;
+				sp.Cdb[10] = 0;
+				sp.Cdb[11] = 0;
 
 				rv = DeviceIoControl(hdev
 					, IOCTL_SCSI_PASS_THROUGH_DIRECT
@@ -138,7 +140,7 @@ namespace utility
 					else
 					{
 						status = 1;
-						if (sense[8] = 0x09) // ATA Status Return Descriptor
+						if (sense[8] == 0x09) // ATA Status Return Descriptor
 						{
 							status = sense[21]; // Status Register
 							err = 0;
@@ -312,6 +314,26 @@ namespace utility
 		return _num;
 	}
 
+	const std::string& disk::model() const
+	{
+		return _model;
+	}
+
+	const std::string& disk::serial_number() const
+	{
+		return _serial;
+	}
+
+	const std::string& disk::firmware_rev() const
+	{
+		return _firm_rev;
+	}
+
+	const partition_set& disk::parts() const
+	{
+		return _parts;
+	}
+
 	disk_size_t disk::size() const
 	{
 		return _size;
@@ -339,11 +361,16 @@ namespace utility
 	{
 		_filename += drive_letter;
 		_filename += ':';
+		_root_path += drive_letter;
+		_root_path += ":\\";
 		init();
 	}
 
-	volume::volume(const std::string &name)
-		: _filename(name)
+	volume::volume(const std::string &root_path)
+		: _size(0)
+		, _free_space(0)
+		, _filename(root_path)
+		, _root_path(root_path)
 	{
 		if (_filename.back() == '\\') _filename.pop_back();
 		init();
@@ -372,7 +399,7 @@ namespace utility
 
 		DWORD bytes_returned;
 		BOOL rv;
-		auto bufsize = sizeof(VOLUME_DISK_EXTENTS) + kwin32_max_phy_disks * sizeof(DISK_EXTENT);
+		auto bufsize = sizeof(VOLUME_DISK_EXTENTS)+kwin32_max_phy_disks * sizeof(DISK_EXTENT);
 		std::unique_ptr<char[]> buf(new char[bufsize]);
 		VOLUME_DISK_EXTENTS *ext = reinterpret_cast<VOLUME_DISK_EXTENTS *>(buf.get());
 
@@ -392,26 +419,73 @@ namespace utility
 			}
 		}
 
-		char path[MAX_PATH];
-		GetVolumePathNameA(_filename.c_str(), path, sizeof(path));
+		char vol_name[MAX_PATH]{};
+		char fs_name[MAX_PATH]{};
+		rv = GetVolumeInformationA(_root_path.c_str()
+			, vol_name, sizeof(vol_name)
+			, nullptr
+			, nullptr
+			, nullptr
+			, fs_name, sizeof(fs_name));
+		_err = get_win32_error_string();
+		if (rv)
+		{
+			_fs_name = fs_name;
+			_label = vol_name;
+		}
+
+		ULARGE_INTEGER free_space{};
+		ULARGE_INTEGER total_size{};
+		rv = GetDiskFreeSpaceExA(_root_path.c_str(), nullptr, &total_size, &free_space);
+		_err = get_win32_error_string();
+		if (rv)
+		{
+			_size = total_size.QuadPart;
+			_free_space = free_space.QuadPart;
+		}
 	}
 
-	const disk_set &volume::extents() const
+	const disk_set& volume::extents() const
 	{
 		return _extents;
 	}
 
-	bool operator==(const disk &disk1, const disk &disk2)
+	disk_size_t volume::size() const
+	{
+		return _size;
+	}
+
+	disk_size_t volume::free_space() const
+	{
+		return _free_space;
+	}
+
+	const std::string& volume::fs_name() const
+	{
+		return _fs_name;
+	}
+
+	const std::string& volume::root_path() const
+	{
+		return _root_path;
+	}
+
+	const std::string& volume::label() const
+	{
+		return _label;
+	}
+
+	bool operator==(const disk& disk1, const disk& disk2)
 	{
 		return disk1.number() == disk2.number();
 	}
 
-	bool operator!=(const disk &disk1, const disk &disk2)
+	bool operator!=(const disk& disk1, const disk& disk2)
 	{
 		return !(disk1 == disk2);
 	}
 
-	bool operator<(const disk &disk1, const disk &disk2)
+	bool operator<(const disk& disk1, const disk& disk2)
 	{
 		return disk1.number() < disk2.number();
 	}
@@ -451,15 +525,19 @@ namespace utility
 		}
 
 		char buf[MAX_PATH]{};
-		auto h = FindFirstVolumeA(buf, sizeof(buf));
-		do
+
+		auto count = GetLogicalDriveStringsA(sizeof(buf), buf);
+		if (count)
 		{
-			volume v(buf);
-			for (auto &disk : v.extents())
+			for (DWORD i = 0; i < count; i++)
 			{
-				map[disk].push_back(v);
+				volume v(buf[i]);
+				for (auto &disk : v.extents())
+				{
+					map[disk].push_back(v);
+				}
 			}
-		} while (FindNextVolumeA(h, buf, sizeof(buf)));
+		}
 
 		return map;
 	}

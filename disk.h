@@ -114,8 +114,10 @@ namespace utility
 		// physical sector size, bytes per sector
 		sector_size_t phy_sector_size() const;
 
-		const std::string &model() const;
-		const partition_set &parts() const;
+		const std::string& model() const;
+		const std::string& serial_number() const;
+		const std::string& firmware_rev() const;
+		const partition_set& parts() const;
 		disk_layout layout() const;
 
 	public: // operations
@@ -139,9 +141,9 @@ namespace utility
 		partition_set _parts;
 	};
 
-	bool operator==(const disk &disk1, const disk &disk2);
-	bool operator!=(const disk &disk1, const disk &disk2);
-	bool operator<(const disk &disk1, const disk &disk2);
+	bool operator==(const disk& disk1, const disk& disk2);
+	bool operator!=(const disk& disk1, const disk& disk2);
+	bool operator<(const disk& disk1, const disk& disk2);
 
 	using disk_set = std::vector<disk>;
 
@@ -150,20 +152,26 @@ namespace utility
 	{
 	public:
 		explicit volume(char drive_letter);
-		explicit volume(const std::string &name);
+		explicit volume(const std::string &root_path);
 		~volume();
 
 		disk_size_t size() const;
-		disk_size_t freespace() const;
-		const std::string &label() const;
+		disk_size_t free_space() const;
+		const std::string& label() const;
+		const std::string& root_path() const;
+		const std::string& fs_name() const;
 
-		const disk_set &extents() const;
+		const disk_set& extents() const;
 
 	private:
 		void init();
 
 	private:
+		disk_size_t _size;
+		disk_size_t _free_space;
 		std::string _filename;
+		std::string _fs_name;
+		std::string _root_path;
 		std::string _label;
 		std::string _err;
 		disk_set _extents;
