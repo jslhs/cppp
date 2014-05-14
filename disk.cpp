@@ -156,6 +156,28 @@ namespace utility
 
 			return !(status & ata_mask_error);
 		}
+
+		std::string get_bus_type(STORAGE_BUS_TYPE type)
+		{
+			switch (type)
+			{
+			case BusTypeScsi: return "SCSI";
+			case BusTypeAtapi: return "ATAPI";
+			case BusTypeAta: return "ATA";
+			case BusType1394: return "1394";
+			case BusTypeSsa: return "SSA";
+			case BusTypeFibre: return "Fibre";
+			case BusTypeUsb: return "USB";
+			case BusTypeRAID: return "RAID";
+			case BusTypeiScsi: return "iSCSI";
+			case BusTypeSas: return "SAS";
+			case BusTypeSata: return "SATA";
+			case BusTypeSd: return "SD";
+			case BusTypeMmc: return "MMC";
+			}
+
+			return "Unknown";
+		}
 	}
 
 	disk::disk(int number)
@@ -264,7 +286,7 @@ namespace utility
 				, nullptr);
 
 			STORAGE_DEVICE_DESCRIPTOR *sdd = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR *>(buf.get());
-
+			_bus_type = get_bus_type(sdd->BusType);
 		}
 
 		// ATA IDENTIFY DEVICE APPROACH
@@ -327,6 +349,11 @@ namespace utility
 	const std::string& disk::firmware_rev() const
 	{
 		return _firm_rev;
+	}
+
+	const std::string& disk::bus_type() const
+	{
+		return _bus_type;
 	}
 
 	const partition_set& disk::parts() const

@@ -18,6 +18,8 @@ int main(void)
 			<< ", " 
 			<< (disk.size() >> 30) 
 			<< "GB" 
+			<< ", "
+			<< disk.bus_type()
 			<< std::endl;
 		std::cout << "Logical Drives: " << std::endl;
 		for (auto &volume : volumes)

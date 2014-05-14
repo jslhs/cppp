@@ -39,6 +39,8 @@ namespace utility
 			HANDLE _handle;
 		};
 
+		std::string get_bus_type(STORAGE_BUS_TYPE type);
+
 		struct ata_command
 		{
 			uint32_t feature;
@@ -117,6 +119,7 @@ namespace utility
 		const std::string& model() const;
 		const std::string& serial_number() const;
 		const std::string& firmware_rev() const;
+		const std::string& bus_type() const;
 		const partition_set& parts() const;
 		disk_layout layout() const;
 
@@ -126,7 +129,7 @@ namespace utility
 
 	private:
 		void identify();
-
+		
 	private:
 		int _num;
 		bool _exists;
@@ -138,6 +141,7 @@ namespace utility
 		std::string _serial;
 		std::string _model;
 		std::string _firm_rev;
+		std::string _bus_type;
 		partition_set _parts;
 	};
 
