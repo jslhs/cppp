@@ -5,6 +5,7 @@
 #include <bitset>
 #include <memory>
 #include <winerror.h>
+#include <Winsock2.h>
 #pragma comment(lib, "Ws2_32")
 
 namespace utility
