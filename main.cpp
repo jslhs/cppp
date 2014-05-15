@@ -1,10 +1,15 @@
 #include <iostream>
 
+#ifdef _WIN32
 #include "disk.h"
+#endif
+
 #include "socket.h"
+#include "console.h"
 
 int main(void)
 {
+#ifdef _WIN32
 	using namespace utility;
 	auto disks = get_disk_volume_map();
 
@@ -39,6 +44,9 @@ int main(void)
 		}
 		std::cout << std::endl;
 	}
+#endif
+
+	std::cout << console::text_red << "Press Enter to continue...";
 
 	std::cin.ignore(1);
 

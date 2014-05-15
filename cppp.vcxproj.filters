@@ -38,5 +38,8 @@
     <ClInclude Include="socket_impl.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="console.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

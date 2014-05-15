@@ -10,16 +10,29 @@
 #pragma comment(lib, "Ws2_32")
 
 #else
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+
+using SOCKET = int;
+#define INVALID_SOCKET (SOCKET)-1
+#define SOCKET_ERROR -1
+
 #endif
 
 #include <string>
 
 namespace net
 {
-	static const std::string null_ip_v4 = "0.0.0.0";
-	static const std::string loopback_ip_v4 = "127.0.0.1";
-	static const std::string loopback_ip_v6 = "::1";
+	static const std::string any_addr = "0.0.0.0";
+	static const std::string any_addr_v6 = "::";
+	static const std::string loopback_addr = "127.0.0.1";
+	static const std::string loopback_addr_v6 = "::1";
 
 	template<int AF, int TYPE, int PROTO>
 	class socket_t
@@ -36,11 +49,11 @@ namespace net
 		bool operator==(const socket_t &s) const;
 		bool operator!=(const socket_t &s) const;
 
-		bool bind(const std::string &ip, int port);
-		bool connect(const std::string &ip, int port);
+		bool bind(const std::string &addr, int port);
+		bool connect(const std::string &addr, int port);
 		int send();
 		int recv();
-		bool listen();
+		bool listen(int backlog = SOMAXCONN);
 		void close();
 		void shutdown();
 		bool ioctl();
@@ -50,6 +63,9 @@ namespace net
 		std::string name() const;
 
 		operator SOCKET() const;
+
+	private:
+		SOCKET _sock;
 	};
 
 	template<class It_Read_Sock, class It_Write_Sock, class It_Except_Sock>
