@@ -46,7 +46,7 @@ int main(void)
 	}
 #endif
 
-	std::cout << console::text_red << "Press Enter to continue...";
+	std::cout << seta(console::color_red) << "Press <Enter> to continue...";
 
 	std::cin.ignore(1);
 

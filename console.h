@@ -2,10 +2,27 @@
 
 #include <iostream>
 
+#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#else
+
+using WORD = unsigned short;
+enum
+{
+	FOREGROUND_RED = 31,
+	FOREGROUND_GREEN = 32,
+	FOREGROUND_BLUE = 34,
+	FOREGROUND_DEFAULT = 39,
+	BACKGROUND_RED = 41,
+	BACKGROUND_GREEN = 42,
+	BACKGROUND_BLUE = 44,
+	BACKGROUND_DEFAULT = 49,
+};
+
+#endif
 
 namespace console
 {
@@ -16,6 +33,24 @@ namespace console
 		, color_red
 		, color_green
 		, color_blue
+
+		, default
+		, black
+		, red
+		, green
+		, yellow
+		, blue
+		, magenta
+		, cyan
+		, light_gray
+		, dark_gray
+		, light_red
+		, light_green
+		, light_yellow
+		, light_blue
+		, light_magenta
+		, light_cyan
+		, white
 	};
 
 	class text_attr
@@ -27,16 +62,19 @@ namespace console
 		}
 
 		text_attr(text_colors foreground_color)
+			: _attr(0)
 		{
 			set_foreground_color(foreground_color);
 		}
 
 		explicit text_attr(int foreground_color)
+			: _attr(0)
 		{
 			set_foreground_color(foreground_color);
 		}
 
 		text_attr(int foreground_color, int background_color)
+			: _attr(0)
 		{
 			set_foreground_color(foreground_color);
 			set_background_color(background_color);
@@ -48,6 +86,9 @@ namespace console
 			{
 			case color_white:
 				_attr |= FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+				break;
+			case color_black:
+				_attr &= ~(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 				break;
 			case color_red:
 				_attr |= FOREGROUND_RED;
@@ -67,6 +108,9 @@ namespace console
 			{
 			case color_white:
 				_attr |= BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+				break;
+			case color_black:
+				_attr &= ~(BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE);
 				break;
 			case color_red:
 				_attr |= BACKGROUND_RED;
@@ -89,14 +133,23 @@ namespace console
 		WORD _attr;
 	};
 
-	static const text_attr text_red(color_red);
-	static const text_attr text_green(color_green);
-	static const text_attr text_blue(color_blue);
-	static const text_attr text_white(color_white);
-
 	std::ostream &operator<<(std::ostream &os, const text_attr &attr)
 	{
+#ifdef _WIN32
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
+#else
+		os << "\033[" << int(attr) << "m";
+#endif
 		return os;
+	}
+
+	text_attr seta(text_colors foreground_color)
+	{
+		return text_attr(foreground_color);
+	}
+
+	text_attr seta(text_colors foreground_color, text_colors background_color)
+	{
+		return text_attr(foreground_color, background_color);
 	}
 }

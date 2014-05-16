@@ -214,3 +214,5 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 ~AutoRecover.cppp.vcxproj
+a.exe
+a.exe.stackdump
